@@ -154,6 +154,17 @@ export const SerialConsole: React.FC<SerialConsoleProps> = ({
         </div>
       </div>
 
+      {hardwareState !== 'connected' && (
+        <div className="mt-3 px-3.5 py-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-cyan-200 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>
+              Device target: Select <strong className="text-white font-mono">Silicon Labs CP210x USB to UART Bridge (COM7)</strong> in the browser prompt. Keep Arduino Serial Monitor closed.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Quick Test Bar */}
       <div className="py-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80">
         <span className="text-xs text-slate-400 font-mono">Hardware Quick-Test Packets:</span>

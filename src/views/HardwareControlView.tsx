@@ -105,15 +105,15 @@ export const HardwareControlView: React.FC<HardwareControlViewProps> = ({
 
             <div className="space-y-2 text-xs font-mono">
               <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-emerald-400 font-bold">GPIO 18</span>
+                <span className="text-emerald-400 font-bold">GPIO 13</span>
                 <span className="text-slate-300">Green LED (220Ω to GND)</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-rose-400 font-bold">GPIO 19</span>
+                <span className="text-rose-400 font-bold">GPIO 14</span>
                 <span className="text-slate-300">Red LED (220Ω to GND)</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-amber-400 font-bold">GPIO 23</span>
+                <span className="text-amber-400 font-bold">GPIO 27</span>
                 <span className="text-slate-300">Active Warning Buzzer</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">

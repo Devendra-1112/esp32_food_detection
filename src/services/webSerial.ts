@@ -148,6 +148,9 @@ class WebSerialService {
     }
 
     try {
+      if (this.connectionState === 'connected' && this.port) {
+        return true;
+      }
       this.setStatus('connecting');
       this.addLog('info', `Requesting Serial Port from user (Baud: ${this.baudRate})...`);
 
@@ -164,9 +167,12 @@ class WebSerialService {
       return true;
     } catch (err: any) {
       this.setStatus('error');
-      const msg = err.message || 'Failed to open serial port';
+      let msg = err.message || 'Failed to open serial port';
+      if (msg.includes('Failed to open serial port') || msg.includes("Failed to execute 'open'")) {
+        msg = 'Port could not be opened. Please ensure you selected "Silicon Labs CP210x USB to UART Bridge (COM7)" and that Arduino Serial Monitor is closed.';
+      }
       this.addLog('error', `Connection error: ${msg}`);
-      throw err;
+      throw new Error(msg);
     }
   }
 

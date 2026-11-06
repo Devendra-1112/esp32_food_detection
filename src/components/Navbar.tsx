@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <Usb className="w-3.5 h-3.5 text-slate-400" />
               <span className="hidden sm:inline font-semibold">
-                {hardwareState === 'connected' ? 'ESP32 COM3' : hardwareState === 'connecting' ? 'CONNECTING...' : 'DISCONNECTED'}
+                {hardwareState === 'connected' ? 'ESP32 ONLINE' : hardwareState === 'connecting' ? 'CONNECTING...' : 'DISCONNECTED'}
               </span>
             </div>
 
