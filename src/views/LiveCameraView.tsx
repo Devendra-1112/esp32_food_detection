@@ -133,7 +133,7 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
     }
   };
 
-  const captureAndAnalyze = async () => {
+  const captureAndAnalyze = async (customKey?: string, isDemo?: boolean) => {
     if (!videoRef.current || !canvasRef.current || !isCameraActive) {
       alert('Camera is not active. Please start camera first.');
       return;
@@ -155,10 +155,13 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
     setCameraError(null);
 
     try {
-      const resp = await analyzeFoodImageApi({
-        imageBase64: base64Image,
-        method: 'CAMERA',
-      });
+      const resp = await analyzeFoodImageApi(
+        {
+          imageBase64: base64Image,
+          method: 'CAMERA',
+        },
+        { customApiKey: customKey, demoMode: isDemo }
+      );
 
       const result = resp.analysis;
       setAnalysisResult(result);
@@ -262,17 +265,46 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
       </div>
 
       {cameraError && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{cameraError}</span>
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-semibold text-rose-200">Vision / Camera Notice</p>
+                <p>{cameraError}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => startCamera()}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium shrink-0 transition"
+            >
+              Retry Camera
+            </button>
           </div>
-          <button
-            onClick={() => startCamera()}
-            className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-bold"
-          >
-            Retry Camera
-          </button>
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rose-500/20">
+            <button
+              onClick={() => {
+                const key = prompt('Paste your valid Gemini API key (starts with AIzaSy...):');
+                if (key && key.trim()) {
+                  localStorage.setItem('user_gemini_key', key.trim());
+                  setCameraError(null);
+                  captureAndAnalyze(key.trim());
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 font-semibold transition"
+            >
+              🔑 Enter Valid Gemini API Key
+            </button>
+            <button
+              onClick={() => {
+                setCameraError(null);
+                captureAndAnalyze(undefined, true);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 font-semibold transition"
+            >
+              ⚡ Run in Demo / Test Mode
+            </button>
+          </div>
         </div>
       )}
 
@@ -378,7 +410,7 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
             </div>
 
             <button
-              onClick={captureAndAnalyze}
+              onClick={() => captureAndAnalyze()}
               disabled={!isCameraActive || isAnalyzing}
               className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
             >

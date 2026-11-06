@@ -43,7 +43,7 @@ export async function analyzeFoodImage(
 
   if (!apiKey) {
     throw new Error(
-      'Computer Vision API Key is missing. Please configure GEMINI_API_KEY in the environment or Settings panel.'
+      'Gemini API Key is missing. Please configure GEMINI_API_KEY in Render environment variables or enter it in the Settings panel.'
     );
   }
 
@@ -52,9 +52,8 @@ export async function analyzeFoodImage(
   // Try modern Gemini models supported by user's key in order
   const modelsToTry = [
     'gemini-2.5-flash',
-    'gemini-flash-latest',
-    'gemini-2.5-flash-lite',
-    'gemini-3-flash-preview',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
     'gemini-2.5-pro',
   ];
   let lastError: Error | null = null;
@@ -92,6 +91,14 @@ export async function analyzeFoodImage(
       if (!response.ok) {
         const errorText = await response.text();
         console.warn(`[Vision API] Model ${model} returned HTTP ${response.status}:`, errorText);
+        
+        // If 401 Unauthorized, key format or authentication is rejected by Google
+        if (response.status === 401) {
+          throw new Error(
+            'Invalid or unauthenticated Gemini API key (HTTP 401). Please provide a valid API key starting with "AIzaSy" from Google AI Studio (https://aistudio.google.com/app/apikey).'
+          );
+        }
+        
         lastError = new Error(`Model ${model} error (${response.status}): ${errorText}`);
         continue;
       }
@@ -142,6 +149,10 @@ export async function analyzeFoodImage(
         timestamp: new Date().toISOString(),
       };
     } catch (err: any) {
+      // Re-throw critical 401 auth errors immediately
+      if (err.message && err.message.includes('HTTP 401')) {
+        throw err;
+      }
       console.warn(`[Vision API] Error with ${model}:`, err.message);
       lastError = err;
     }
@@ -151,5 +162,31 @@ export async function analyzeFoodImage(
     lastError ||
     new Error('Computer Vision API failed across all attempted models. Please verify API key and network connection.')
   );
+}
+
+export function generateDemoAnalysis(filenameOrHint?: string): VisionAnalysisResult {
+  const hints = ['Apple', 'Banana', 'Tomato', 'Orange', 'Potato'];
+  let name = 'Apple';
+  if (filenameOrHint) {
+    const lower = filenameOrHint.toLowerCase();
+    for (const h of hints) {
+      if (lower.includes(h.toLowerCase())) {
+        name = h;
+        break;
+      }
+    }
+  }
+
+  const category = ['Tomato', 'Potato', 'Carrot', 'Onion'].includes(name) ? 'Vegetable' : 'Fruit';
+  return {
+    food_name: name,
+    category,
+    condition: 'GOOD',
+    confidence: 94,
+    observations: `Visual analysis indicates normal coloration, intact skin, and absence of rot or mold spores. (Demo / Simulation Mode)`,
+    recommended_shelf_life_days: category === 'Fruit' ? 7 : 10,
+    model_used: 'Demo Produce Analyzer',
+    timestamp: new Date().toISOString(),
+  };
 }
 

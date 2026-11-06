@@ -75,17 +75,21 @@ export const ImageUploadView: React.FC<ImageUploadViewProps> = ({
     }
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (customKey?: string, isDemo?: boolean) => {
     if (!selectedFile) return;
 
     setIsAnalyzing(true);
     setError(null);
 
     try {
-      const resp = await analyzeFoodImageApi({
-        file: selectedFile,
-        method: 'IMAGE_UPLOAD',
-      });
+      const resp = await analyzeFoodImageApi(
+        {
+          file: selectedFile,
+          method: 'IMAGE_UPLOAD',
+          foodHint: selectedFile.name,
+        },
+        { customApiKey: customKey, demoMode: isDemo }
+      );
 
       const res = resp.analysis;
       setAnalysisResult(res);
@@ -148,9 +152,38 @@ export const ImageUploadView: React.FC<ImageUploadViewProps> = ({
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>{error}</span>
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-3">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold text-rose-200">Produce Analysis Notice</p>
+              <p>{error}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rose-500/20">
+            <button
+              onClick={() => {
+                const key = prompt('Paste your valid Gemini API key (starts with AIzaSy...):');
+                if (key && key.trim()) {
+                  localStorage.setItem('user_gemini_key', key.trim());
+                  setError(null);
+                  handleAnalyze(key.trim());
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 font-semibold transition"
+            >
+              🔑 Enter Valid Gemini API Key
+            </button>
+            <button
+              onClick={() => {
+                setError(null);
+                handleAnalyze(undefined, true);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 font-semibold transition"
+            >
+              ⚡ Run in Demo / Test Mode
+            </button>
+          </div>
         </div>
       )}
 
@@ -204,7 +237,7 @@ export const ImageUploadView: React.FC<ImageUploadViewProps> = ({
                 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
               </div>
               <button
-                onClick={handleAnalyze}
+                onClick={() => handleAnalyze()}
                 disabled={isAnalyzing}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition disabled:opacity-50"
               >

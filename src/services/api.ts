@@ -13,23 +13,41 @@ export async function checkBackendHealth(): Promise<{
 }
 
 export async function analyzeFoodImageApi(
-  payload: { imageBase64?: string; file?: File; method: 'CAMERA' | 'IMAGE_UPLOAD' | 'MANUAL' },
-  customApiKey?: string
+  payload: { imageBase64?: string; file?: File; method: 'CAMERA' | 'IMAGE_UPLOAD' | 'MANUAL'; foodHint?: string },
+  customApiKeyOrOptions?: string | { customApiKey?: string; demoMode?: boolean; allowFallback?: boolean }
 ): Promise<{
   success: boolean;
   analysis: VisionResult;
   history_id: string;
   image_url?: string;
 }> {
+  const options =
+    typeof customApiKeyOrOptions === 'string'
+      ? { customApiKey: customApiKeyOrOptions }
+      : customApiKeyOrOptions || {};
+
   const headers: Record<string, string> = {};
-  if (customApiKey) {
-    headers['x-gemini-key'] = customApiKey;
+  const activeKey =
+    options.customApiKey ||
+    (typeof window !== 'undefined' ? localStorage.getItem('user_gemini_key') || undefined : undefined);
+
+  if (activeKey) {
+    headers['x-gemini-key'] = activeKey;
+  }
+  if (options.demoMode) {
+    headers['x-demo-mode'] = 'true';
+  }
+  if (options.allowFallback) {
+    headers['x-allow-fallback'] = 'true';
   }
 
   if (payload.file) {
     const formData = new FormData();
     formData.append('image', payload.file);
     formData.append('method', payload.method);
+    if (payload.foodHint) {
+      formData.append('foodHint', payload.foodHint);
+    }
 
     const res = await fetch(`${API_BASE}/vision/analyze`, {
       method: 'POST',
@@ -49,6 +67,7 @@ export async function analyzeFoodImageApi(
       body: JSON.stringify({
         imageBase64: payload.imageBase64,
         method: payload.method,
+        foodHint: payload.foodHint,
       }),
     });
     const data = await res.json();

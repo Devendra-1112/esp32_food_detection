@@ -5,7 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { db } from './db.js';
-import { analyzeFoodImage } from './vision.js';
+import { analyzeFoodImage, generateDemoAnalysis, VisionAnalysisResult } from './vision.js';
 
 dotenv.config({ override: true });
 
@@ -90,9 +90,24 @@ app.post(
       }
 
       const method = (req.body.method as 'CAMERA' | 'IMAGE_UPLOAD' | 'MANUAL') || 'CAMERA';
+      const isDemoMode = req.headers['x-demo-mode'] === 'true' || req.query.demo === 'true';
 
-      // Perform genuine computer vision analysis
-      const analysis = await analyzeFoodImage(imageBuffer, mimeType, clientApiKey);
+      // Perform genuine computer vision analysis or demo simulation
+      let analysis: VisionAnalysisResult;
+      if (isDemoMode) {
+        analysis = generateDemoAnalysis(req.file?.originalname || req.body.foodHint || 'Apple');
+      } else {
+        try {
+          analysis = await analyzeFoodImage(imageBuffer, mimeType, clientApiKey);
+        } catch (visionErr: any) {
+          if (req.headers['x-allow-fallback'] === 'true') {
+            console.warn('[Vision API] Live API failed, falling back to Demo Analysis:', visionErr.message);
+            analysis = generateDemoAnalysis(req.file?.originalname || 'Apple');
+          } else {
+            throw visionErr;
+          }
+        }
+      }
 
       // Record detection in database
       const historyItem = db.addHistoryRecord({
