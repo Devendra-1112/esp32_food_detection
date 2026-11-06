@@ -8,6 +8,7 @@
     "dev:client": "vite",
     "dev:server": "tsx server/index.ts",
     "build": "tsc -b && vite build",
+    "start": "tsx server/index.ts",
     "preview": "vite preview"
   },
   "dependencies": {

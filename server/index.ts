@@ -224,6 +224,16 @@ app.delete('/api/history', (_req: Request, res: Response) => {
   res.json({ success: true, message: 'History cleared' });
 });
 
+// Serve frontend production build if available
+const distPath = path.resolve(process.cwd(), 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  // SPA fallback for Express 5
+  app.use((_req: Request, res: Response) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`[Expiry First Server] Backend listening on http://localhost:${PORT}`);
 });
