@@ -69,7 +69,7 @@ app.post(
         imageUrl = `/uploads/${req.file.filename}`;
       } else if (req.body.imageBase64) {
         let rawBase64 = req.body.imageBase64;
-        const matches = rawBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        const matches = rawBase64.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
           mimeType = matches[1];
           rawBase64 = matches[2];

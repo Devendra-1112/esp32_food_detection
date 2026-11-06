@@ -42,22 +42,20 @@ export const HardwareControlView: React.FC<HardwareControlViewProps> = ({
 
         <div className="flex items-center gap-3">
           <div
-            className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-2 ${
-              hardwareState === 'connected'
+            className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-2 ${hardwareState === 'connected'
                 ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
                 : hardwareState === 'connecting'
-                ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 animate-pulse'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
-            }`}
+                  ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 animate-pulse'
+                  : 'bg-slate-800 text-slate-400 border-slate-700'
+              }`}
           >
             <span
-              className={`w-2 h-2 rounded-full ${
-                hardwareState === 'connected'
+              className={`w-2 h-2 rounded-full ${hardwareState === 'connected'
                   ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]'
                   : hardwareState === 'connecting'
-                  ? 'bg-amber-400 animate-ping'
-                  : 'bg-rose-500'
-              }`}
+                    ? 'bg-amber-400 animate-ping'
+                    : 'bg-rose-500'
+                }`}
             />
             <span>PORT: {hardwareState.toUpperCase()}</span>
           </div>

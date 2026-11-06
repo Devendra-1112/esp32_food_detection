@@ -37,16 +37,29 @@
   "detection_history": [
     {
       "user_id": "user_default",
-      "food_name": "Unidentified Item",
-      "category": "Other",
-      "condition": "UNCERTAIN",
-      "confidence": 100,
-      "observations": "No food item (fruit, vegetable, or other produce) was detected in the image. The image primarily shows a person.",
+      "food_name": "Onion",
+      "category": "Vegetable",
+      "condition": "GOOD",
+      "confidence": 88,
+      "observations": "The onion exhibits normal visible coloration and appears to have an intact, firm skin. There are no evident signs of mold, significant dark discoloration, or visible decay.",
       "detection_method": "CAMERA",
-      "image_url": "/uploads/snapshot_1793963089613_vs3p.jpg",
+      "image_url": "/uploads/snapshot_1793971195555_rp92.jpg",
       "hardware_status": "NOT_CONNECTED",
-      "id": "det_1793963095536_jhxb3",
-      "detected_at": "2026-11-06T11:04:55.536Z"
+      "id": "det_1793971202968_4ecmo",
+      "detected_at": "2026-11-06T13:20:02.968Z"
+    },
+    {
+      "user_id": "user_default",
+      "food_name": "Potato",
+      "category": "Vegetable",
+      "condition": "GOOD",
+      "confidence": 95,
+      "observations": "The potato exhibits normal skin coloration and appears firm, with no visible signs of mold, rot, or significant damage. Its surface is intact and free from soft spots or shriveling.",
+      "detection_method": "CAMERA",
+      "image_url": "/uploads/snapshot_1793971070043_qkh0.jpg",
+      "hardware_status": "NOT_CONNECTED",
+      "id": "det_1793971075862_um16n",
+      "detected_at": "2026-11-06T13:17:55.862Z"
     },
     {
       "user_id": "user_default",

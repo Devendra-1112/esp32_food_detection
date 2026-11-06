@@ -35,8 +35,14 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   const [stream, setStream] = React.useState<MediaStream | null>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
   const [devices, setDevices] = React.useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = React.useState<string>('');
+  const selectedDeviceIdRef = React.useRef(selectedDeviceId);
+  React.useEffect(() => {
+    selectedDeviceIdRef.current = selectedDeviceId;
+  }, [selectedDeviceId]);
+
   const [isCameraActive, setIsCameraActive] = React.useState(false);
   const [cameraError, setCameraError] = React.useState<string | null>(null);
 
@@ -47,37 +53,42 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
 
   const [inventoryModalOpen, setInventoryModalOpen] = React.useState(false);
 
-  const listCameras = async () => {
+  const stopCamera = React.useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setStream(null);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  }, []);
+
+  const listCameras = React.useCallback(async () => {
     try {
       if (!navigator.mediaDevices?.enumerateDevices) return;
       const allDevices = await navigator.mediaDevices.enumerateDevices();
       const videoInputs = allDevices.filter((d) => d.kind === 'videoinput');
       setDevices(videoInputs);
-      if (videoInputs.length > 0 && !selectedDeviceId) {
+      if (videoInputs.length > 0 && !selectedDeviceIdRef.current) {
         setSelectedDeviceId(videoInputs[0].deviceId);
       }
     } catch (e) {
       console.warn('Enumerate devices failed:', e);
     }
-  };
-
-  React.useEffect(() => {
-    listCameras();
-    startCamera();
-
-    return () => {
-      stopCamera();
-    };
   }, []);
 
-  const startCamera = async (deviceId?: string) => {
+  const startCamera = React.useCallback(async (deviceId?: string) => {
     setCameraError(null);
     stopCamera();
+
+    const targetDeviceId = deviceId || selectedDeviceIdRef.current;
 
     try {
       const constraints: MediaStreamConstraints = {
         video: {
-          deviceId: deviceId || selectedDeviceId ? { exact: deviceId || selectedDeviceId } : undefined,
+          deviceId: targetDeviceId ? { exact: targetDeviceId } : undefined,
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -85,6 +96,7 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
       };
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       setIsCameraActive(true);
 
@@ -103,18 +115,16 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
           : `Failed to open camera: ${err.message || 'Unknown error'}`
       );
     }
-  };
+  }, [stopCamera, listCameras]);
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsCameraActive(false);
-  };
+  React.useEffect(() => {
+    listCameras();
+    startCamera();
+
+    return () => {
+      stopCamera();
+    };
+  }, [listCameras, startCamera, stopCamera]);
 
   const handleDeviceChange = (deviceId: string) => {
     setSelectedDeviceId(deviceId);

@@ -16,8 +16,6 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   onClose,
   onSaved,
 }) => {
-  if (!isOpen) return null;
-
   const today = new Date().toISOString().split('T')[0];
 
   // Default suggested expiry date based on recommended shelf life, but editable
@@ -38,6 +36,23 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   const [notes, setNotes] = React.useState(initialResult?.observations || '');
   const [isSaving, setIsSaving] = React.useState(false);
   const [error, setError] = React.useState('');
+
+  // Reset form when modal opens with new data
+  React.useEffect(() => {
+    if (isOpen) {
+      setName(initialResult?.food_name || '');
+      setCategory(initialResult?.category || 'Fruit');
+      setQuantity('1 unit');
+      setPurchaseDate(today);
+      setExpiryDate(defaultExpiry);
+      setCondition(initialResult?.condition || 'GOOD');
+      setLocation('Crisper Drawer');
+      setNotes(initialResult?.observations || '');
+      setError('');
+    }
+  }, [isOpen, initialResult, defaultExpiry, today]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
