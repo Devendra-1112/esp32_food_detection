@@ -1,0 +1,77 @@
+{
+  "profiles": [
+    {
+      "id": "user_default",
+      "full_name": "Smart Kitchen User",
+      "email": "kitchen@expiryfirst.local"
+    }
+  ],
+  "food_items": [
+    {
+      "id": "item_1",
+      "user_id": "user_default",
+      "name": "Fresh Fuji Apple",
+      "category": "Fruit",
+      "quantity": "4 units",
+      "purchase_date": "2026-11-04",
+      "expiry_date": "2026-11-11",
+      "condition": "GOOD",
+      "storage_location": "Crisper Drawer",
+      "notes": "Firm skin, bright red color",
+      "created_at": "2026-11-04T05:41:13.308Z"
+    },
+    {
+      "id": "item_2",
+      "user_id": "user_default",
+      "name": "Roma Tomato",
+      "category": "Vegetable",
+      "quantity": "3 units",
+      "purchase_date": "2026-11-01",
+      "expiry_date": "2026-11-07",
+      "condition": "GOOD",
+      "storage_location": "Middle Shelf",
+      "notes": "Ripe, best consumed soon",
+      "created_at": "2026-11-01T05:41:13.308Z"
+    }
+  ],
+  "detection_history": [
+    {
+      "user_id": "user_default",
+      "food_name": "Unidentified Item",
+      "category": "Other",
+      "condition": "UNCERTAIN",
+      "confidence": 100,
+      "observations": "No food item (fruit, vegetable, or other produce) was detected in the image. The image primarily shows a person.",
+      "detection_method": "CAMERA",
+      "image_url": "/uploads/snapshot_1793963089613_vs3p.jpg",
+      "hardware_status": "NOT_CONNECTED",
+      "id": "det_1793963095536_jhxb3",
+      "detected_at": "2026-11-06T11:04:55.536Z"
+    },
+    {
+      "user_id": "user_default",
+      "food_name": "Unidentified Item",
+      "category": "Other",
+      "condition": "UNCERTAIN",
+      "confidence": 80,
+      "observations": "No food item was detected in the image. The image appears to be a solid color, providing insufficient visual evidence for analysis.",
+      "detection_method": "CAMERA",
+      "image_url": "/uploads/snapshot_1793946420385_nuf0.png",
+      "hardware_status": "NOT_CONNECTED",
+      "id": "det_1793946424158_6bsyz",
+      "detected_at": "2026-11-06T06:27:04.158Z"
+    },
+    {
+      "id": "det_1",
+      "user_id": "user_default",
+      "food_name": "Apple",
+      "category": "Fruit",
+      "condition": "GOOD",
+      "confidence": 96,
+      "observations": "Firm surface, vibrant pigmentation, no signs of bruising or fungal spores.",
+      "detection_method": "CAMERA",
+      "hardware_status": "SENT_AND_ACK",
+      "detected_at": "2026-11-06T04:41:13.308Z"
+    }
+  ]
+}
