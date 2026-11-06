@@ -284,11 +284,20 @@ export const LiveCameraView: React.FC<LiveCameraViewProps> = ({
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rose-500/20">
             <button
               onClick={() => {
-                const key = prompt('Paste your valid Gemini API key (starts with AIzaSy...):');
-                if (key && key.trim()) {
-                  localStorage.setItem('user_gemini_key', key.trim());
-                  setCameraError(null);
-                  captureAndAnalyze(key.trim());
+                const key = prompt(
+                  'Paste your new Gemini API key (e.g. AQ... or AIza...):',
+                  localStorage.getItem('user_gemini_key') || ''
+                );
+                if (key !== null) {
+                  if (key.trim()) {
+                    localStorage.setItem('user_gemini_key', key.trim());
+                    setCameraError(null);
+                    captureAndAnalyze(key.trim());
+                  } else {
+                    localStorage.removeItem('user_gemini_key');
+                    setCameraError(null);
+                    captureAndAnalyze();
+                  }
                 }
               }}
               className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 font-semibold transition"

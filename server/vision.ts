@@ -39,17 +39,27 @@ export async function analyzeFoodImage(
   mimeType: string = 'image/jpeg',
   clientApiKey?: string
 ): Promise<VisionAnalysisResult> {
-  const apiKey = clientApiKey || process.env.GEMINI_API_KEY;
+  // Collect candidate keys: client key first, then environment key
+  const keysToTry: string[] = [];
+  if (clientApiKey && clientApiKey.trim()) {
+    keysToTry.push(clientApiKey.trim());
+  }
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
+    const envKey = process.env.GEMINI_API_KEY.trim();
+    if (!keysToTry.includes(envKey)) {
+      keysToTry.push(envKey);
+    }
+  }
 
-  if (!apiKey) {
+  if (keysToTry.length === 0) {
     throw new Error(
-      'Gemini API Key is missing. Please configure GEMINI_API_KEY in Render environment variables or enter it in the Settings panel.'
+      'Gemini API Key is missing. Please configure GEMINI_API_KEY in Render Environment Variables or enter it in Settings.'
     );
   }
 
   const base64Data = imageBuffer.toString('base64');
 
-  // Try modern Gemini models supported by user's key in order
+  // Try modern Gemini models supported in order
   const modelsToTry = [
     'gemini-2.5-flash',
     'gemini-2.0-flash',
@@ -58,105 +68,110 @@ export async function analyzeFoodImage(
   ];
   let lastError: Error | null = null;
 
-  for (const model of modelsToTry) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  for (const apiKey of keysToTry) {
+    for (const model of modelsToTry) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              { text: SYSTEM_PROMPT },
-              {
-                inline_data: {
-                  mime_type: mimeType,
-                  data: base64Data,
+        const requestBody = {
+          contents: [
+            {
+              parts: [
+                { text: SYSTEM_PROMPT },
+                {
+                  inline_data: {
+                    mime_type: mimeType,
+                    data: base64Data,
+                  },
                 },
-              },
-            ],
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: 'application/json',
           },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: 'application/json',
-        },
-      };
+        };
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn(`[Vision API] Model ${model} returned HTTP ${response.status}:`, errorText);
-        
-        // If 401 Unauthorized, key format or authentication is rejected by Google
-        if (response.status === 401) {
-          throw new Error(
-            'Invalid or unauthenticated Gemini API key (HTTP 401). Please provide a valid API key starting with "AIzaSy" from Google AI Studio (https://aistudio.google.com/app/apikey).'
-          );
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.warn(`[Vision API] Model ${model} returned HTTP ${response.status}:`, errorText);
+
+          // If 401 Unauthorized for this key, break out of this model loop to try next key
+          if (response.status === 401) {
+            lastError = new Error(
+              'Invalid or unauthenticated Gemini API key (HTTP 401). Please check that your key from Google AI Studio (https://aistudio.google.com/app/apikey) is active.'
+            );
+            break;
+          }
+
+          lastError = new Error(`Model ${model} error (${response.status}): ${errorText}`);
+          continue;
         }
-        
-        lastError = new Error(`Model ${model} error (${response.status}): ${errorText}`);
-        continue;
+
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawText) {
+          throw new Error('Empty response from computer vision model.');
+        }
+
+        // Clean response text in case fences were returned
+        const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        // Validate parsed fields
+        const conditionUpper = String(parsed.condition || '').toUpperCase();
+        const validCondition: 'GOOD' | 'BAD' | 'UNCERTAIN' =
+          conditionUpper === 'GOOD' ? 'GOOD' : conditionUpper === 'BAD' ? 'BAD' : 'UNCERTAIN';
+
+        const validCategory: VisionAnalysisResult['category'] = [
+          'Fruit',
+          'Vegetable',
+          'Dairy',
+          'Bakery',
+          'Meat',
+          'Other',
+        ].includes(parsed.category)
+          ? parsed.category
+          : 'Fruit';
+
+        const confidence = Math.min(100, Math.max(10, Math.round(Number(parsed.confidence) || 80)));
+
+        return {
+          food_name: parsed.food_name || 'Unidentified Food',
+          category: validCategory,
+          condition: validCondition,
+          confidence,
+          observations:
+            parsed.observations ||
+            (validCondition === 'GOOD'
+              ? 'Fresh appearance with typical coloration.'
+              : validCondition === 'BAD'
+              ? 'Observable signs of decay or spoilage.'
+              : 'Visual details inconclusive; manual inspection recommended.'),
+          recommended_shelf_life_days: Number(parsed.recommended_shelf_life_days) || 5,
+          model_used: model,
+          timestamp: new Date().toISOString(),
+        };
+      } catch (err: any) {
+        console.warn(`[Vision API] Error with key (...${apiKey.slice(-6)}) on ${model}:`, err.message);
+        lastError = err;
       }
-
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!rawText) {
-        throw new Error('Empty response from computer vision model.');
-      }
-
-      // Clean response text in case fences were returned
-      const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleanJson);
-
-      // Validate parsed fields
-      const conditionUpper = String(parsed.condition || '').toUpperCase();
-      const validCondition: 'GOOD' | 'BAD' | 'UNCERTAIN' =
-        conditionUpper === 'GOOD' ? 'GOOD' : conditionUpper === 'BAD' ? 'BAD' : 'UNCERTAIN';
-
-      const validCategory: VisionAnalysisResult['category'] = [
-        'Fruit',
-        'Vegetable',
-        'Dairy',
-        'Bakery',
-        'Meat',
-        'Other',
-      ].includes(parsed.category)
-        ? parsed.category
-        : 'Fruit';
-
-      const confidence = Math.min(100, Math.max(10, Math.round(Number(parsed.confidence) || 80)));
-
-      return {
-        food_name: parsed.food_name || 'Unidentified Food',
-        category: validCategory,
-        condition: validCondition,
-        confidence,
-        observations:
-          parsed.observations ||
-          (validCondition === 'GOOD'
-            ? 'Fresh appearance with typical coloration.'
-            : validCondition === 'BAD'
-            ? 'Observable signs of decay or spoilage.'
-            : 'Visual details inconclusive; manual inspection recommended.'),
-        recommended_shelf_life_days: Number(parsed.recommended_shelf_life_days) || 5,
-        model_used: model,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (err: any) {
-      // Re-throw critical 401 auth errors immediately
-      if (err.message && err.message.includes('HTTP 401')) {
-        throw err;
-      }
-      console.warn(`[Vision API] Error with ${model}:`, err.message);
-      lastError = err;
     }
   }
+
+  throw (
+    lastError ||
+    new Error('Computer Vision API failed across all attempted models. Please verify API key and network connection.')
+  );
+}
 
   throw (
     lastError ||
